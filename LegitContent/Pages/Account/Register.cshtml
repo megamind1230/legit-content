@@ -1,0 +1,18 @@
+@page
+@model LegitContent.Pages.Account.RegisterModel
+@{
+	ViewData["Title"] = "Register";
+}
+
+<main class="auth-page">
+	<h1>Create account</h1>
+	<form method="post" class="auth-form">
+		<div asp-validation-summary="All" class="errors"></div>
+		<label asp-for="Input.Email">Email</label>
+		<input asp-for="Input.Email" autocomplete="email" />
+		<label asp-for="Input.Password">Password (min 8 characters)</label>
+		<input asp-for="Input.Password" type="password" autocomplete="new-password" />
+		<button type="submit" class="btn accent wide">Create account</button>
+	</form>
+	<p class="auth-alt">Already registered? <a asp-page="/Account/Login" asp-route-returnUrl="@Model.ReturnUrl">Log in</a></p>
+</main>

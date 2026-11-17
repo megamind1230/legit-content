@@ -1,0 +1,97 @@
+﻿@page
+@model IndexModel
+@{
+	ViewData["Title"] = "legit-content";
+}
+
+<section class="hero">
+	<h1 class="brand-title">legit-<span>content</span></h1>
+	<p class="tagline">Escape the brain-rot. One link at a time.</p>
+</section>
+
+@if (Model.HasActiveFilters)
+{
+	<div class="active-filters">
+		@if (Model.Type is not null)
+		{
+			<a class="chip removable" href="@Model.RemoveTypeUrl()">@Model.Type <span class="x">×</span></a>
+		}
+		@foreach (var tag in Model.TagList)
+		{
+			<a class="chip removable" href="@Model.RemoveTagUrl(tag)">@tag <span class="x">×</span></a>
+		}
+		@if (!string.IsNullOrWhiteSpace(Model.Search))
+		{
+			<a class="chip removable" href="@Model.RemoveSearchUrl()">"@Model.Search" <span class="x">×</span></a>
+		}
+		@if (Model.TagMode == TagMode.All)
+		{
+			<a class="chip removable" href="@Model.ToggleTagModeUrl()">match: all <span class="x">×</span></a>
+		}
+		<a class="chip clear-chip" href="@Model.ClearUrl()">Clear all</a>
+	</div>
+}
+
+<main class="feed">
+	@if (Model.Cards.Count == 0)
+	{
+		<p class="empty">No legit content matches your filters yet. Be the first to add some.</p>
+	}
+	@foreach (var card in Model.Cards)
+	{
+		<article class="card">
+			<form class="vote" method="post" asp-page-handler="Upvote" asp-route-linkId="@card.Id" asp-route-returnUrl="@Model.CurrentUrl">
+				<button class="vote-btn @(card.UpvotedByMe ? "voted" : "")" type="submit" title="Upvote">▲ @card.Upvotes</button>
+			</form>
+			<div class="card-body">
+				<div class="badges">
+					<span class="badge type-badge @(card.Type.ToString().ToLowerInvariant())">@card.Type</span>
+					@foreach (var tag in card.Tags)
+					{
+						<span class="badge tag-badge">@tag</span>
+					}
+				</div>
+				<h2 class="card-title"><a href="@card.Url" target="_blank" rel="noopener noreferrer">@card.Title</a></h2>
+				<p class="card-desc">@card.Description</p>
+				<div class="card-meta">
+					<img class="favicon" src="https://icons.duckduckgo.com/ip3/@(card.Domain).ico" width="16" height="16" loading="lazy" alt="" title="@card.Domain" />
+					<span>by @card.Submitter</span>
+					<span>@card.Age</span>
+				</div>
+			</div>
+		</article>
+	}
+</main>
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+	<button class="fab" id="add-button" type="button" title="Add legit content">+</button>
+}
+else
+{
+	<a class="fab" href="/Account/Login" title="Log in to add legit content">+</a>
+}
+
+<dialog id="add-dialog" @(Model.ShowAddDialog ? "open" : "")>
+	<form method="post" asp-page-handler="Add" class="add-form">
+		<h3>Add legit content</h3>
+		<div asp-validation-summary="All" class="errors"></div>
+		<label asp-for="NewLink.Url">Link</label>
+		<input asp-for="NewLink.Url" placeholder="https://…" />
+		<label asp-for="NewLink.Title">Title</label>
+		<input asp-for="NewLink.Title" />
+		<label asp-for="NewLink.Description">Why is it worth our time?</label>
+		<textarea asp-for="NewLink.Description" rows="3"></textarea>
+		<label asp-for="NewLink.Type">Type</label>
+		<select asp-for="NewLink.Type" asp-items="Html.GetEnumSelectList<ContentType>()">
+			<option value="">Choose…</option>
+		</select>
+		<label asp-for="NewLink.Tags">Tags (comma-separated, e.g. medicine/anatomy)</label>
+		<input asp-for="NewLink.Tags" autocomplete="off" />
+		<ul id="add-tag-suggestions" class="tag-suggestions" hidden></ul>
+		<div class="dialog-actions">
+			<button class="btn ghost" type="button" data-close>Cancel</button>
+			<button class="btn accent" type="submit">Add link</button>
+		</div>
+	</form>
+</dialog>

@@ -1,0 +1,19 @@
+@page
+@model LegitContent.Pages.Account.LoginModel
+@{
+	ViewData["Title"] = "Log in";
+}
+
+<main class="auth-page">
+	<h1>Log in</h1>
+	<form method="post" class="auth-form">
+		<div asp-validation-summary="All" class="errors"></div>
+		<input type="hidden" asp-for="ReturnUrl" />
+		<label asp-for="Input.Email">Email</label>
+		<input asp-for="Input.Email" autocomplete="email" />
+		<label asp-for="Input.Password">Password</label>
+		<input asp-for="Input.Password" type="password" autocomplete="current-password" />
+		<button type="submit" class="btn accent wide">Log in</button>
+	</form>
+	<p class="auth-alt">No account yet? <a asp-page="/Account/Register" asp-route-returnUrl="@Model.ReturnUrl">Register</a></p>
+</main>

@@ -1,0 +1,67 @@
+#+TITLE: legit-content — changelog
+#+AUTHOR: Hassan
+#+EMAIL: hassan24641@gmail.com
+
+* Unreleased
+
+** Added
+- Minimal UI: filter bar removed from the page, everything consolidated into
+  a click-to-open search overlay behind a header search icon (search box,
+  type filters, sort radios, tag input).
+- Nested tags replace the Topic enum: hierarchical =Tag= entity with paths
+  like =science/physics=, =LinkTag= join table, up to 4 levels deep, free-form
+  creation when adding a link (max 5 per link).
+- Typeahead for tags everywhere (search overlay and add form) via a new
+  =GET /tags?q= JSON endpoint returning full paths with link counts.
+- Tag filtering with an Any/All match-mode toggle (Any is the default).
+- Active-filters strip under the header showing every applied filter/search
+  as a removable chip, with clear-all.
+- =NestedTags= migration converting existing Topic values to tags.
+- Add button moved from bottom-center FAB to docked, centered in the header
+  top bar.
+- Admin account: =IsAdmin= on User, =Admin= config section, admin ensured on
+  every startup, =Role: Admin= claim issued at login for future admin pages.
+- Site favicons on cards (DuckDuckGo icon CDN, domain as tooltip) instead of
+  the plain domain text.
+- Upvoting without page reload: fetch-based vote with in-place count/state
+  update, antiforgery token from a meta tag, redirect fallback for no-JS.
+- EF Core migrations: local =dotnet-ef= tool, InitialCreate migration,
+  =MigrateAsync= at startup replacing EnsureCreated.
+
+** Changed
+- Feed cards show tag badges instead of the topic badge.
+- Tests grew to 32 (TagService hierarchy/validation/search, TagMatcher
+  match modes, LinkService updated for tag paths).
+
+** Fixed
+- URL normalization dropped query strings, so two different YouTube videos
+  (=youtube.com/watch?v=A= vs =?v=B=) were rejected as duplicates.
+  =NormalizeUrl= now keeps the query; regression test added.
+
+** Added
+- Serilog logging: rolling daily files at =~/magnus/legit-content/logs/=,
+  request logging middleware, 14-day retention.
+- Project docs: README.org, plans-and-todos.org, bugs.org, changelog.org,
+  LICENSE (GPL-3.0), run.sh launcher.
+
+* 0.1.0 — 2026-11-17
+
+Initial version.
+
+** Added
+- One-page feed: link cards with type/topic badges, source domain,
+  submitter, age, description.
+- Filters: type chips, topic chips, Most-legit/Newest sort, search.
+- Ranking: upvotes + 3-day freshness boost (LinkRanker).
+- Visibility rule: posts always visible for their first 30 days, then hidden
+  only with 0 upvotes.
+- Upvote-only voting with toggle; anonymous votes redirect to login and back.
+- Add-link dialog (native <dialog>), floating + button bottom-center.
+- Anti-spam: 5 links/day/user, duplicate-URL rejection with normalization,
+  http(s)-only validation.
+- Accounts: email/password registration, login, logout, 30-day sliding
+  cookie session, hashed passwords.
+- Light/dark theme toggle with the custom palette.
+- Seed data: 19 curated legit links + 5 demo users (unguessable passwords).
+- SQLite database auto-created and seeded on first run.
+- 16 unit tests (link ranker, link service, user service).

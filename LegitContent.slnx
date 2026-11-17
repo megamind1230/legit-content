@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="LegitContent.Tests/LegitContent.Tests.csproj" />
+  <Project Path="LegitContent/LegitContent.csproj" />
+</Solution>

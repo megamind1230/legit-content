@@ -1,0 +1,163 @@
+#+TITLE: legit-content
+#+AUTHOR: Hassan
+#+EMAIL: hassan24641@gmail.com
+#+OPTIONS: toc:2
+
+An anti-brain-rot link aggregator: a single page where people share links to
+genuinely good content from around the internet — articles, videos, podcasts,
+courses, books, tools — and upvote what is actually worth everyone's time.
+
+* Mission
+
+Escape the brain-rot phenomena of social media. Every post on the site is
+vouched for by the community: posts always survive their first 30 days, and
+after that they stay only if at least one person upvoted them. What remains is
+a feed of things people found useful, good to learn, legit.
+
+* Features
+
+** Feed (the one page)
+- Type filters: Article, Video, Podcast, Course, Book, Tool
+- Nested tag filters: hierarchical paths like =science/physics=, typed in the
+  search overlay with typeahead, Any/All match mode for multiple tags
+- Sort: Most legit (upvotes + 3-day freshness boost) or Newest
+- Search across titles and descriptions (case-insensitive)
+- Everything lives behind a header search icon (click to open the overlay);
+  applied filters show as a removable chip strip under the header
+- Every card shows type badges, tag badges, source domain, submitter, age, and
+  a forced "why is this worth our time" description
+
+** Contributing
+- "+" button docked in the header top bar opens an add-link dialog
+  (login required)
+- Fields: URL, title, description, type, tags (free-form nested paths, max 5,
+  with typeahead — new tags are created on the fly)
+- Server-side rules: valid http(s) URL, 5 links per user per day,
+  duplicate-URL rejection (normalized: case, trailing slash, default ports;
+  query strings preserved so different YouTube videos do not collide)
+
+** Voting
+- Upvote-only (toggle: click again to undo)
+- No page reload: the vote POSTs via fetch and the count updates in place —
+  filters and scroll position are preserved; falls back to a normal form
+  post when JavaScript is unavailable
+- Ranking: score = upvotes + freshness bonus (3 → 0 over the first 3 days)
+- Visibility: always visible during the first 30 days; after that hidden only
+  if it has 0 upvotes (constants in =Services/LinkRanker.cs=)
+
+** Cards
+- Each card shows the source site's favicon instead of plain domain text
+  (served from the DuckDuckGo icon CDN; hover shows the domain), type/topic
+  badges, submitter, age, and the forced "why is this worth our time"
+  description
+
+** Accounts and admin
+- Email + password (min 8 chars), hashed with ASP.NET Core PasswordHasher
+- 30-day sliding cookie session
+- Admin account ensured at startup from the =Admin= config section; admins
+  carry a =Role: Admin= claim ready for future admin-only pages
+- Anonymous visitors can browse, filter, and search; voting/adding redirect
+  to login and return you where you were
+
+** Theming
+- Light (#e8f5e9 background) and dark (#0d1117 family) themes
+- Toggle in the header, persisted in localStorage, falls back to
+  prefers-color-scheme
+- Palette: #ff8c42 headings, amber borders/hints, #7c0aed special buttons
+  (the + FAB), #238636 vote buttons, #0d9488 chips
+
+* Tech stack
+
+| Layer      | Choice                                             |
+|------------+----------------------------------------------------|
+| Runtime    | .NET 10, ASP.NET Core Razor Pages (server-rendered) |
+| Database   | SQLite (single file) via EF Core 10, migrations     |
+| Auth       | Cookie authentication + PasswordHasher              |
+| Logging    | Serilog, rolling daily files                        |
+| Frontend   | Plain HTML/CSS + ~20 lines of vanilla JS            |
+| Tests      | xUnit (ranker, tag/link/user services, matcher)     |
+
+* How to use
+
+#+BEGIN_SRC bash
+./run.sh                 # builds and serves http://localhost:5095
+dotnet test              # run the unit tests
+#+END_SRC
+
+- Browse: open http://localhost:5095, use the header search icon to filter by
+  type/sort/search/tags, remove filters from the chip strip
+- Contribute: Register → log in → hit the + button → paste a URL, explain why
+  it is worth people's time, pick type + tags
+- Vote: the ▲ button on any card; clicking again un-votes
+- Theme: the ◐ button in the header
+
+* Configuration
+
+| What                  | Where                                            |
+|-----------------------+--------------------------------------------------|
+| SQLite connection     | =appsettings.json → ConnectionStrings:Default=   |
+| Admin email/password  | =appsettings.json → Admin= (env: =Admin__Password=) |
+| Fresh/hide rule       | =Services/LinkRanker.cs= constants               |
+| Daily submission cap  | =Services/LinkService.cs MaxLinksPerUserPerDay=  |
+| Log directory         | =Program.cs logDirectory= (~/magnus/legit-content/logs) |
+| Seed content          | =Data/DbInitializer.cs Seeds=                    |
+
+* Docs
+
+- =plans-and-todos.org= — roadmap and detailed next steps
+- =bugs.org= — current bugs and known limitations with fix paths
+- =changelog.org= — release history
+- =LICENSE= — GPL-3.0
+
+* Project structure
+
+#+BEGIN_SRC text
+legit-content/
+├── run.sh                      # launcher (builds + serves on :5095)
+├── LICENSE                     # GPL-3.0
+├── plans-and-todos.org         # roadmap
+├── bugs.org                    # bugs & limitations
+├── changelog.org               # release history
+├── .editorconfig               # tabs, width 2
+├── .gitignore
+├── .config/dotnet-tools.json   # local dotnet-ef tool
+├── LegitContent/               # the app
+│   ├── Program.cs              # wiring: EF, Serilog, cookie auth, migrations, seeding
+│   ├── appsettings.json        # connection string + admin credentials
+│   ├── Migrations/             # EF Core migrations (InitialCreate, NestedTags)
+│   ├── Data/
+│   │   ├── AppDbContext.cs     # EF model: User, Link, Upvote, Tag, LinkTag + indexes
+│   │   └── DbInitializer.cs    # seed-if-empty + EnsureAdminAsync
+│   ├── Models/
+│   │   ├── ContentType.cs      # Article/Video/Podcast/Course/Book/Tool
+│   │   ├── Tag.cs              # hierarchical tag (Name, ParentId)
+│   │   ├── LinkTag.cs, TagMode.cs, TagResolution.cs, TagSearchItem.cs
+│   │   ├── FeedSort.cs         # MostLegit/Newest
+│   │   ├── User.cs, Link.cs, Upvote.cs
+│   │   ├── AddLinkInput.cs     # add-dialog form contract (tags as path string)
+│   │   ├── LinkCard.cs         # display projection for the feed
+│   │   ├── AuthResult.cs, LinkAddResult.cs
+│   ├── Services/
+│   │   ├── LinkRanker.cs       # score + 30-day visibility rule
+│   │   ├── LinkService.cs      # add rules: rate limit, dedupe, validation
+│   │   ├── TagService.cs       # resolve/find tags, /tags typeahead search
+│   │   ├── TagMatcher.cs       # Any/All tag match logic
+│   │   ├── UserService.cs      # register/verify with PasswordHasher
+│   │   ├── AuthSignIn.cs       # shared sign-in helper (issues admin claim)
+│   │   └── AgeFormatter.cs     # "3d ago" strings
+│   ├── Pages/
+│   │   ├── Index.cshtml(.cs)   # THE one page: overlay filters, feed, votes, add dialog
+│   │   ├── Account/            # Login, Register, Logout
+│   │   ├── Shared/_Layout.cshtml
+│   │   └── Error.cshtml
+│   └── wwwroot/
+│       ├── css/site.css        # full theme (light/dark, your palette)
+│       └── js/site.js          # theme toggle, add dialog, AJAX voting, tag typeahead
+└── LegitContent.Tests/         # xUnit
+    ├── LinkRankerTests.cs      # score + visibility rules
+    ├── LinkServiceTests.cs     # add/dedupe/rate-limit/tag-creation rules
+    ├── TagServiceTests.cs      # hierarchy, validation, typeahead search
+    ├── TagMatcherTests.cs      # Any/All match modes
+    ├── UserServiceTests.cs     # register/verify round-trips
+    └── TestClock.cs            # fixed TimeProvider for tests
+#+END_SRC

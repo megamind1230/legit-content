@@ -1,0 +1,100 @@
+#+TITLE: legit-content — plans and todos
+#+AUTHOR: Hassan
+#+EMAIL: hassan24641@gmail.com
+#+TODO syntax: - [ ] todo | - [-] in-progress | - [X] done
+
+* v1.2 — 2026-11-17 (done)
+
+- [X] Minimal UI: filter chip bar removed from the page — everything moved into
+      a click-to-open search overlay in the header (search icon in the top bar)
+      with type filters, sort radios and free-form nested tag search
+- [X] Active-filters strip under the header when filters/search are on, each
+      condition removable with an x chip + clear-all
+- [X] Nested tags replace the =Topic= enum: self-referencing =Tag= entity
+      (Id, Name, ParentId, unique ParentId+Name) + =LinkTag= join table,
+      lowercase paths, segments [a-z0-9-], max 4 levels deep, 30 chars/segment
+- [X] Free-form tag input on add (max 5 per link, comma-separated paths like
+      =science/physics=) with typeahead from a =GET /tags?q= JSON endpoint
+- [X] Tag filter with Any (default) / All match mode (segmented radio toggle)
+      applied in memory after loading; leaf-level filtering, parent tags don't
+      include descendants
+- [X] =NestedTags= migration converts existing Topic data to tags with a raw
+      SQL data copy before dropping the column
+- [X] 32 tests passing (new: TagService hierarchy/validation/search, TagMatcher
+      any/all logic; LinkService tests updated for tag paths)
+
+* v1.1 — 2026-11-17 (done)
+
+- [X] Add button docked in the header top bar (centered), replacing the
+      bottom-center FAB position
+- [X] Admin account: =IsAdmin= flag on User, =Role: Admin= claim issued at
+      login, =EnsureAdminAsync= runs every startup from the =Admin= config
+      section (creates or promotes, idempotent)
+- [X] EF Core migrations adopted: =dotnet-ef= local tool, InitialCreate
+      migration, =MigrateAsync= at startup (replaces =EnsureCreated=)
+- [X] Website favicon shown on cards instead of the plain domain text
+      (DuckDuckGo icon CDN, domain as tooltip)
+- [X] Upvoting no longer reloads the page: fetch() POST with the antiforgery
+      token from a meta tag, count + voted state updated in place; no-JS
+      fallback still does the redirect
+
+* v1.0 — current release (done)
+
+** Core
+- [X] ASP.NET Core Razor Pages app (.NET 10) + SQLite via EF Core
+- [X] Data model: User, Link, Upvote (unique user+link pair)
+- [X] One-page feed with type chips, topic chips, Most-legit/Newest sort, search
+- [X] Ranking = upvotes + 3-day freshness boost (LinkRanker)
+- [X] 30-day visibility rule: always visible first 30 days, then hidden if 0 upvotes
+- [X] Floating + button (bottom center) opening a native <dialog> add-form
+- [X] Upvote toggle (click again to undo), vote-arrow buttons on every card
+- [X] Cookie auth: register/login/logout, hashed passwords (PasswordHasher)
+- [X] Anti-spam: 5 links/day/user, duplicate-URL rejection (normalized), URL validation
+- [X] Light/dark theme toggle (user palette, localStorage + prefers-color-scheme)
+- [X] Seed data: 19 curated links + 5 demo users with votes (DbInitializer)
+- [X] xUnit tests: 17 passing (ranker, link service, user service)
+- [X] Serilog rolling logs at ~/magnus/legit-content/logs/
+- [X] run.sh launcher script
+
+** v1.0 bug fixes shipped
+- [X] NormalizeUrl dropped query strings — two different YouTube videos (same
+      /watch path, different ?v=) were treated as duplicates. Query is now kept.
+
+* In progress
+- [-] (nothing currently)
+
+* Next steps (suggested order)
+- [ ] Usernames — display a chosen handle instead of email prefix
+- [ ] Tag maintenance — no rename/delete UI for tags; orphan tags (0 links)
+      accumulate when links get deleted or re-tagged
+- [ ] Selecting a parent tag could include all descendant tags (currently
+      leaf-level exact match only)
+- [ ] Admin dashboard — admin-only page listing hidden posts, spam patterns,
+      per-user stats; guard with [Authorize(Roles = "Admin")] (claim is live)
+- [ ] Pagination — feed is capped at 100 posts in memory; add skip/take pages
+- [ ] Report button + moderation queue page (admin-only, uses the admin claim)
+- [ ] Vote integrity hardening — consider requiring accounts before the first N
+      votes, or per-IP vote throttling once public
+- [ ] Deployment — publish as self-contained single binary; SQLite file backup
+      strategy (copy on schedule); run behind Caddy/nginx with real HTTPS
+- [ ] Favicon/meta — og:title and og:description for nice link previews
+
+* Later / feature ideas
+- [ ] Collections ("Best intro to physics", "5 videos that changed my thinking")
+- [ ] Comments on links (keep minimal, maybe one top-level reply depth)
+- [ ] RSS/Atom feed of the feed (per topic too)
+- [ ] Multi-language support (add a Language field on Link; filter chip row)
+- [ ] Bookmark/save-for-later per user
+- [ ] Optional OpenGraph scraping on submit to auto-fill title/description
+- [ ] Admin dashboard: hidden-post archive view, per-user stats, spam patterns
+- [ ] Dead-link checker (periodic background job marking 404s)
+
+* Refactoring reminders (SOLID / clean-code watchlist)
+- [ ] IndexModel.LoadCardsAsync does filtering + ordering + projection in one
+      method; if filters grow, extract a LinkQuery/LinkFeed service
+- [ ] LinkRanker.Score is recomputed in memory per link — fine at current scale,
+      revisit when the table grows past ~10k rows (move to SQL-computable score)
+- [ ] Cookie-based claims only carry Id + email; if roles/claims multiply,
+      switch to a proper IClaimsTransformation
+- [ ] DbInitializer seed list is code — consider moving seeds to a JSON file
+      when the list is regularly edited

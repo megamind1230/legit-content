@@ -1,0 +1,84 @@
+﻿@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+	var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>@ViewData["Title"] - legit-content</title>
+	<meta name="csrf-token" content="@csrfToken" />
+	<script>
+		(function () {
+			var stored = localStorage.getItem("theme");
+			var theme = stored ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+			document.documentElement.dataset.theme = theme;
+		})();
+	</script>
+	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="/">legit-<span>content</span></a>
+		<div class="topbar-right">
+			<button id="search-button" type="button" class="icon-btn" title="Search & filters" aria-haspopup="dialog">
+				<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+			</button>
+			<button id="theme-toggle" type="button" class="icon-btn" title="Toggle theme">◐</button>
+			@if (User.Identity?.IsAuthenticated == true)
+			{
+				<span class="user-email" title="@User.Identity?.Name">@(User.Identity?.Name?.Split('@')[0])</span>
+				<form method="post" asp-page="/Account/Logout" class="inline-form">
+					<button type="submit" class="btn ghost">Log out</button>
+				</form>
+			}
+			else
+			{
+				<a class="btn ghost" asp-page="/Account/Login">Log in</a>
+				<a class="btn solid" asp-page="/Account/Register">Register</a>
+			}
+		</div>
+	</header>
+	@RenderBody()
+	<footer class="site-footer">
+		<p>curated by humans, for humans — no feed-farming, no brain-rot</p>
+	</footer>
+
+	<dialog id="search-dialog">
+		<form method="get" action="/" class="search-overlay">
+			<input type="hidden" name="Type" id="overlay-type" />
+			<input id="overlay-search" name="Search" type="search" placeholder="Search legit content…" autocomplete="off" />
+			<div class="overlay-row">
+				<div class="seg" role="radiogroup" aria-label="Sort">
+					<label class="seg-opt sort"><input type="radio" name="Sort" value="MostLegit" checked /><span>Most legit</span></label>
+					<label class="seg-opt sort"><input type="radio" name="Sort" value="Newest" /><span>Newest</span></label>
+				</div>
+				<button type="button" id="filters-toggle" class="icon-btn" title="Filter by tags" aria-controls="tag-panel">
+					<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M21.41 11.58l-9-9C12.05 2.21 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+				</button>
+			</div>
+			<div id="tag-panel" hidden>
+				<div class="tag-input-wrap">
+					<input id="tag-input" type="text" placeholder="Type a tag — e.g. medicine/anatomy" autocomplete="off" />
+					<ul id="tag-suggestions" class="tag-suggestions" hidden></ul>
+				</div>
+				<div id="tag-chips"></div>
+				<input type="hidden" name="Tags" id="overlay-tags" />
+				<div class="seg" role="radiogroup" aria-label="Match selected tags">
+					<span class="seg-label">match:</span>
+					<label class="seg-opt mode"><input type="radio" name="TagMode" value="Any" checked /><span>any</span></label>
+					<label class="seg-opt mode"><input type="radio" name="TagMode" value="All" /><span>all</span></label>
+				</div>
+			</div>
+			<div class="dialog-actions">
+				<button class="btn ghost" type="button" data-close>Cancel</button>
+				<button class="btn accent" type="submit">Search</button>
+			</div>
+		</form>
+	</dialog>
+
+	<script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

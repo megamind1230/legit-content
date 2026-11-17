@@ -1,0 +1,70 @@
+#+TITLE: legit-content — bugs
+#+AUTHOR: Hassan
+#+EMAIL: hassan24641@gmail.com
+
+* Open bugs
+
+None known as of 2026-11-17. Known limitations are tracked below — they are
+behavioral trade-offs, not defects, but each lists a fix path if it bites.
+
+* Fixed bugs
+
+** FIXED — Duplicate detection collided on query strings (fixed 2026-11-17)- Symptom: =LinkService.NormalizeUrl= built the canonical URL from
+  scheme://host:port/path only, dropping the query string.
+- Impact: two different YouTube videos (both =youtube.com/watch=, different
+  =?v=ID=) normalized to the same string — the second was rejected as a
+  duplicate.
+- Fix: =Services/LinkService.cs NormalizeUrl= now appends =uri.Query= when
+  present. Host/scheme still lowercased, default ports and trailing slashes
+  still stripped, fragments still dropped.
+- Test: =LinkServiceTests.AddLinkAsync_SamePathDifferentQuery_BothPersist=
+
+* Known limitations (with fix paths)
+
+** Known limitation — admin password lives in appsettings.json
+- =LegitContent/appsettings.json → Admin= holds the admin email and password
+  in plain text. This file would end up in any public repo.
+- Fix before deploying publicly: move the password out —
+  =Admin:Password= can be overridden with the =Admin__Password= environment
+  variable (config precedence), and the appsettings value should be removed.
+  Same treatment for the connection string if it ever holds credentials.
+
+** Known limitation — search treats =%= and =_= as SQL wildcards
+- =IndexModel.LoadCardsAsync= passes the raw search term into
+  =EF.Functions.Like=, so a user typing =%= matches everything.
+- Fix if it matters: escape =%/=_ and add =\... ESCAPE '\'= to the pattern,
+  or normalize the term before building the pattern.
+
+** Dev-mode HTTPS redirect warning
+- Logs show "Failed to determine the https port for redirect" when running
+  via =run.sh= (HTTP only). Harmless locally; in production serve real HTTPS
+  behind a reverse proxy or set =ASPNETCORE_URLS= with an https port.
+- Fix if it annoys you: only call =UseHttpsRedirection()= when
+  =!app.Environment.IsDevelopment()=.
+
+** Feed ranking and hiding run in memory
+- =IndexModel= loads all filtered links then sorts by =LinkRanker.Score=.
+  Fine below ~10k links; beyond that, precompute a Score column (or cache)
+  and order in SQL.
+- Tracked in plans-and-todos.org (refactoring watchlist).
+
+** Seeded demo users are unguessable and unusable
+- The 5 =@legitcontent.local= accounts exist only to hold seed votes and have
+  random passwords. If you ever want to claim one, reset its hash directly in
+  the DB — do not weaken the seeding logic.
+
+** Tag system has no rename/delete and keeps orphans
+- Tags cannot be renamed, merged or deleted (no UI, no API). Links deleted via
+  admin hide flow leave their tags behind with 0 links, and these orphans
+  still show up in typeahead suggestions.
+- Fix if it bites: add an admin tag management page (rename merges by
+  re-pointing LinkTags, delete only when no LinkTags reference remains), plus
+  a periodic cleanup query for orphan tags.
+
+** Parent-tag filter is leaf-level only
+- Filtering by =science= matches links tagged exactly =science=, not links
+  tagged =science/physics=. Users may expect selecting a parent to include
+  descendants.
+- Fix if it bites: expand the requested tag set with all descendant tag ids
+  in =TagService.FindTagsAsync= (recursive CTE over ParentId) before handing
+  them to =TagMatcher=.

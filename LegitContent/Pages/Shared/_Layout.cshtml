@@ -2,6 +2,7 @@
 @inject IAntiforgery Antiforgery
 @{
 	var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+	var currentPage = ViewContext.RouteData.Values["page"] as string;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -27,24 +28,71 @@
 				<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
 			</button>
 			<button id="theme-toggle" type="button" class="icon-btn" title="Toggle theme">◐</button>
-			@if (User.Identity?.IsAuthenticated == true)
-			{
-				<span class="user-email" title="@User.Identity?.Name">@(User.Identity?.Name?.Split('@')[0])</span>
-				<form method="post" asp-page="/Account/Logout" class="inline-form">
-					<button type="submit" class="btn ghost">Log out</button>
-				</form>
-			}
-			else
-			{
-				<a class="btn ghost" asp-page="/Account/Login">Log in</a>
-				<a class="btn solid" asp-page="/Account/Register">Register</a>
-			}
+			<button id="nav-button" type="button" class="icon-btn burger" title="Menu" aria-label="Menu" aria-haspopup="dialog">☰</button>
 		</div>
 	</header>
 	@RenderBody()
 	<footer class="site-footer">
 		<p>curated by humans, for humans — no feed-farming, no brain-rot</p>
 	</footer>
+
+	<dialog id="nav-dialog" class="side-panel">
+		<svg class="icon-sprite" aria-hidden="true" focusable="false">
+			<symbol id="i-feed" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></symbol>
+			<symbol id="i-about" viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM11 9h2V7h-2v2z"/></symbol>
+			<symbol id="i-archive" viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-4 7 4V5a2 2 0 0 0-2-2z"/></symbol>
+			<symbol id="i-read" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></symbol>
+			<symbol id="i-login" viewBox="0 0 24 24"><path d="M10 17v-2H3v-2h7V9l4 4-4 4zm9-14h-7a2 2 0 0 0-2 2v2h2V5h7v14h-7v-2H10v2a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></symbol>
+			<symbol id="i-logout" viewBox="0 0 24 24"><path d="M17 8l-1.41 1.41L17.17 11H9v2h8.17l-1.58 1.59L17 16l4-4-4-4zM5 5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H5V5z"/></symbol>
+			<symbol id="i-register" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zM6 15V13H4v2H2v2h2v2h2v-2h2v-2H6z"/></symbol>
+		</svg>
+		<div class="side-head">
+			<a class="brand" href="/">legit-<span>content</span></a>
+			<button class="icon-btn" type="button" data-close aria-label="Close menu">×</button>
+		</div>
+		<nav class="side-nav">
+			<a class="@(currentPage == "/Index" ? "active" : "")" asp-page="/Index">
+				<svg class="nav-icon" aria-hidden="true"><use href="#i-feed" /></svg><span>Feed</span>
+			</a>
+			@if (User.Identity?.IsAuthenticated == true)
+			{
+				<a class="@(currentPage == "/Archive" ? "active" : "")" asp-page="/Archive">
+					<svg class="nav-icon" aria-hidden="true"><use href="#i-archive" /></svg><span>Archive</span>
+				</a>
+				<a class="@(currentPage == "/AlreadyRead" ? "active" : "")" asp-page="/AlreadyRead">
+					<svg class="nav-icon" aria-hidden="true"><use href="#i-read" /></svg><span>Already read</span>
+				</a>
+			}
+		</nav>
+		<div class="side-foot">
+			<a class="side-link @(currentPage == "/About" ? "active" : "")" asp-page="/About">
+				<svg class="nav-icon" aria-hidden="true"><use href="#i-about" /></svg><span>About</span>
+			</a>
+			<div class="side-account">
+				@if (User.Identity?.IsAuthenticated == true)
+				{
+					<div class="side-user">
+						<span class="side-name" title="@User.Identity?.Name">@(User.Identity?.Name?.Split('@')[0])</span>
+						<span class="side-email" title="@User.Identity?.Name">@User.Identity?.Name</span>
+					</div>
+					<form method="post" asp-page="/Account/Logout">
+						<button type="submit" class="btn ghost wide">
+							<svg class="nav-icon" aria-hidden="true"><use href="#i-logout" /></svg><span>Log out</span>
+						</button>
+					</form>
+				}
+				else
+				{
+					<a class="btn ghost wide" asp-page="/Account/Login">
+						<svg class="nav-icon" aria-hidden="true"><use href="#i-login" /></svg><span>Log in</span>
+					</a>
+					<a class="btn solid wide" asp-page="/Account/Register">
+						<svg class="nav-icon" aria-hidden="true"><use href="#i-register" /></svg><span>Register</span>
+					</a>
+				}
+			</div>
+		</div>
+	</dialog>
 
 	<dialog id="search-dialog">
 		<form method="get" action="/" class="search-overlay">

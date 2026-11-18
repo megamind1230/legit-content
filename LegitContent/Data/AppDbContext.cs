@@ -15,6 +15,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
 		public DbSet<LinkTag> LinkTags => Set<LinkTag>();
 
+		public DbSet<ReadLink> ReadLinks => Set<ReadLink>();
+
+		public DbSet<ArchivedLink> ArchivedLinks => Set<ArchivedLink>();
+
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 				modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
@@ -43,6 +47,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 						entity.HasKey(lt => new { lt.LinkId, lt.TagId });
 						entity.HasOne(lt => lt.Link).WithMany(l => l.Tags).HasForeignKey(lt => lt.LinkId);
 						entity.HasOne(lt => lt.Tag).WithMany(t => t.Links).HasForeignKey(lt => lt.TagId);
+				});
+
+				modelBuilder.Entity<ReadLink>(entity =>
+				{
+						entity.HasIndex(r => new { r.UserId, r.LinkId }).IsUnique();
+						entity.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId);
+						entity.HasOne(r => r.Link).WithMany().HasForeignKey(r => r.LinkId);
+				});
+
+				modelBuilder.Entity<ArchivedLink>(entity =>
+				{
+						entity.HasIndex(a => new { a.UserId, a.Url }).IsUnique();
+						entity.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId);
 				});
 		}
 }

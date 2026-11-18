@@ -11,4 +11,5 @@ public sealed record LinkCard(
 	int Upvotes,
 	bool UpvotedByMe,
 	string Submitter,
-	string Age);
+	string Age,
+	bool ArchivedByMe);

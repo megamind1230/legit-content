@@ -17,6 +17,35 @@ namespace LegitContent.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
+            modelBuilder.Entity("LegitContent.Models.ArchivedLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Url")
+                        .IsUnique();
+
+                    b.ToTable("ArchivedLinks");
+                });
+
             modelBuilder.Entity("LegitContent.Models.Link", b =>
                 {
                     b.Property<int>("Id")
@@ -72,6 +101,32 @@ namespace LegitContent.Migrations
                     b.HasIndex("TagId");
 
                     b.ToTable("LinkTags");
+                });
+
+            modelBuilder.Entity("LegitContent.Models.ReadLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LinkId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LinkId");
+
+                    b.HasIndex("UserId", "LinkId")
+                        .IsUnique();
+
+                    b.ToTable("ReadLinks");
                 });
 
             modelBuilder.Entity("LegitContent.Models.Tag", b =>
@@ -148,6 +203,17 @@ namespace LegitContent.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("LegitContent.Models.ArchivedLink", b =>
+                {
+                    b.HasOne("LegitContent.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LegitContent.Models.Link", b =>
                 {
                     b.HasOne("LegitContent.Models.User", "Submitter")
@@ -176,6 +242,25 @@ namespace LegitContent.Migrations
                     b.Navigation("Link");
 
                     b.Navigation("Tag");
+                });
+
+            modelBuilder.Entity("LegitContent.Models.ReadLink", b =>
+                {
+                    b.HasOne("LegitContent.Models.Link", "Link")
+                        .WithMany()
+                        .HasForeignKey("LinkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegitContent.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Link");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LegitContent.Models.Tag", b =>

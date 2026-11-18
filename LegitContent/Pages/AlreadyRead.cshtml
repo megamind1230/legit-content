@@ -1,0 +1,21 @@
+@page
+@model AlreadyReadModel
+@{
+	ViewData["Title"] = "Already read";
+}
+
+<section class="hero">
+	<h1 class="brand-title">Already read</h1>
+	<p class="tagline">Watched, noted, done. Unmark anything to bring it back.</p>
+</section>
+
+<main class="feed">
+	@if (Model.Cards.Count == 0)
+	{
+		<p class="empty">Nothing marked as read yet. Clear your feed a card at a time.</p>
+	}
+	@foreach (var card in Model.Cards)
+	{
+		<partial name="_LinkCard" model="card" />
+	}
+</main>

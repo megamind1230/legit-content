@@ -1,0 +1,32 @@
+@page
+@model ArchiveModel
+@{
+	ViewData["Title"] = "Archive";
+}
+
+<section class="hero">
+	<h1 class="brand-title">Archive</h1>
+	<p class="tagline">Saved snapshots — they outlive the feed.</p>
+</section>
+
+<main class="feed">
+	@if (Model.Items.Count == 0)
+	{
+		<p class="empty">Your archive is empty. Save something from the feed.</p>
+	}
+	else
+	{
+		<ul class="archive-list">
+			@foreach (var item in Model.Items)
+			{
+				<li class="archive-item">
+					<a class="archive-title" href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Title</a>
+					<span class="archive-date">saved @item.Saved</span>
+					<form class="action-form delete" method="post" asp-page-handler="Delete" asp-route-archivedId="@item.Id" asp-route-returnUrl="@Model.CurrentUrl">
+						<button class="icon-action" type="submit" title="Delete from archive" aria-label="Delete from archive">×</button>
+					</form>
+				</li>
+			}
+		</ul>
+	}
+</main>

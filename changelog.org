@@ -5,6 +5,33 @@
 * Unreleased
 
 ** Added
+- Monochrome type icons (article/document, video/movie, podcast/mic,
+  course/cap, book, tool/wrench) shown at the bottom of each card before the
+  source domain, with the type name as tooltip; replaces the colored type
+  pills while topic tags stay at the top.
+- About page (/About) explaining the mission, ranking/visibility rules, how to
+  browse, vote, post, search, mark as read and archive; linked from the
+  sidebar menu for everyone.
+- Mark as read: a check button on every feed card hides that link from the
+  feed for the current user (per-account =ReadLink= table, unique user+link,
+  indexed, so it scales without loading client state).
+- =Already read= page (/AlreadyRead) listing the user's read links newest
+  first, each with an unmark button that restores it to the feed.
+- Archive: a bookmark button on feed cards saves a title+URL snapshot
+  (=ArchivedLink= table, unique user+URL, no link FK) that survives feed
+  expiry and link deletion. The /Archive page lists snapshots with delete.
+- Burger menu sidebar (native <dialog>) with Feed, Archive and Already read
+  for logged-in users; guests get Log in + Register pinned at the bottom,
+  logged-in users get their name/email and Log out there. The panel docks to
+  the right edge, matching the burger's position.
+- Monochrome icons added to every sidebar item and account button (feed,
+  archive, already read, about, log in, log out, register); About moved to
+  the docked bottom section, just above the account block.
+- Mark-read / archive / unmark / delete actions post via fetch with the
+  antiforgery token and update the page in place; plain form posts still work
+  without JavaScript.
+- =UserLinkStateService= with tests for idempotent read/archive, snapshot
+  survival, and owner-scoped archive deletion.
 - Minimal UI: filter bar removed from the page, everything consolidated into
   a click-to-open search overlay behind a header search icon (search box,
   type filters, sort radios, tag input).
@@ -29,11 +56,23 @@
   =MigrateAsync= at startup replacing EnsureCreated.
 
 ** Changed
+- Feed page title/tagline ("legit-content · Escape the brain-rot...") removed
+  for a more minimal feed; the brand stays in the top bar.
+- Card read/archive controls moved to the right edge, stacked vertically;
+  upvote stays on the left.
+- Auth controls (name, log out, log in, register) moved out of the top bar
+  into the burger sidebar footer, and the burger itself docked on the right.
+- LICENSE template updated: the program name and description now say
+  legit-content / "a curated feed of legit content" instead of chrono.
 - Feed cards show tag badges instead of the topic badge.
 - Tests grew to 32 (TagService hierarchy/validation/search, TagMatcher
   match modes, LinkService updated for tag paths).
 
 ** Fixed
+- Closed sidebar dialog was visible at the bottom-left of non-feed pages:
+  the author `.side-panel { display:flex }` rule overrode the native
+  `dialog:not([open])` hidden state. Display flex is now scoped to
+  `.side-panel[open]`.
 - URL normalization dropped query strings, so two different YouTube videos
   (=youtube.com/watch?v=A= vs =?v=B=) were rejected as duplicates.
   =NormalizeUrl= now keeps the query; regression test added.

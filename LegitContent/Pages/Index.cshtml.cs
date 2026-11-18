@@ -8,7 +8,12 @@ using System.Security.Claims;
 
 namespace LegitContent.Pages;
 
-public class IndexModel(AppDbContext db, LinkService linkService, TagService tagService, TimeProvider clock) : PageModel
+public class IndexModel(
+	AppDbContext db,
+	LinkService linkService,
+	TagService tagService,
+	UserLinkStateService userLinkState,
+	TimeProvider clock) : PageModel
 {
 		public const int PageSize = 100;
 
@@ -97,6 +102,34 @@ public class IndexModel(AppDbContext db, LinkService linkService, TagService tag
 
 		private string? CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+		public async Task<IActionResult> OnPostMarkReadAsync(int linkId, string? returnUrl, CancellationToken cancellationToken)
+		{
+				if (User.Identity?.IsAuthenticated != true)
+						return RedirectToPage("/Account/Login", new { returnUrl = returnUrl ?? "/" });
+
+				await userLinkState.MarkReadAsync(CurrentUserId!, linkId, cancellationToken);
+
+				return Request.Headers.TryGetValue("X-Requested-With", out var requestedWith) && requestedWith == "fetch"
+						? new JsonResult(new { read = true })
+						: LocalRedirect(string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl);
+		}
+
+		public async Task<IActionResult> OnPostArchiveAsync(int linkId, string? returnUrl, CancellationToken cancellationToken)
+		{
+				if (User.Identity?.IsAuthenticated != true)
+						return RedirectToPage("/Account/Login", new { returnUrl = returnUrl ?? "/" });
+
+				var link = await db.Links.AsNoTracking().FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
+				if (link is null)
+						return LocalRedirect(string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl);
+
+				await userLinkState.ArchiveAsync(CurrentUserId!, link, cancellationToken);
+
+				return Request.Headers.TryGetValue("X-Requested-With", out var requestedWith) && requestedWith == "fetch"
+						? new JsonResult(new { archived = true })
+						: LocalRedirect(string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl);
+		}
+
 		private async Task<IActionResult> RedrawWithDialogAsync(CancellationToken cancellationToken)
 		{
 				TagList = SplitTags(Tags);
@@ -108,6 +141,7 @@ public class IndexModel(AppDbContext db, LinkService linkService, TagService tag
 		private async Task LoadCardsAsync(CancellationToken cancellationToken)
 		{
 				var now = clock.GetUtcNow().UtcDateTime;
+				var userId = CurrentUserId;
 				var query = db.Links
 					.AsNoTracking()
 					.Include(l => l.Upvotes)
@@ -115,6 +149,9 @@ public class IndexModel(AppDbContext db, LinkService linkService, TagService tag
 					.Include(l => l.Tags)
 					.ThenInclude(lt => lt.Tag)
 					.AsQueryable();
+
+				if (userId is not null)
+						query = query.Where(l => !db.ReadLinks.Any(r => r.LinkId == l.Id && r.UserId == userId));
 
 				if (Type is not null) query = query.Where(l => l.Type == Type);
 				if (!string.IsNullOrWhiteSpace(Search))
@@ -145,26 +182,18 @@ public class IndexModel(AppDbContext db, LinkService linkService, TagService tag
 					: visible.OrderByDescending(l => LinkRanker.Score(l, now)).ThenByDescending(l => l.Created);
 
 				var paths = await tagService.GetPathsAsync(cancellationToken);
-				var userId = CurrentUserId;
+				var archivedUrls = userId is null
+					? null
+					: (await db.ArchivedLinks
+						.Where(a => a.UserId == userId)
+						.Select(a => a.Url)
+						.ToListAsync(cancellationToken))
+						.ToHashSet();
 				Cards = ordered
 					.Take(PageSize)
-					.Select(l => new LinkCard(
-						l.Id,
-						l.Title,
-						l.Url,
-						Domain(l.Url),
-						l.Description,
-						l.Type,
-						l.Tags.Select(lt => paths.GetValueOrDefault(lt.TagId, lt.Tag?.Name ?? "")).Where(p => p.Length > 0).ToList(),
-						l.Upvotes.Count,
-						userId is not null && l.Upvotes.Any(v => v.UserId == userId),
-						l.Submitter?.Email.Split('@')[0] ?? "unknown",
-						AgeFormatter.Format(l.Created, now)))
+					.Select(l => LinkCardMapper.Map(l, paths, userId, archivedUrls, now))
 					.ToList();
 		}
-
-		private static string Domain(string url) =>
-			Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : url;
 
 		public string RemoveTypeUrl() => BuildUrl(null, TagList, TagMode, Sort, Search);
 

@@ -1,0 +1,49 @@
+@model LinkCard
+@{
+	var mode = ViewData["CardMode"] as string ?? "feed";
+	var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<article class="card">
+	<form class="vote" method="post" asp-page="/Index" asp-page-handler="Upvote" asp-route-linkId="@Model.Id" asp-route-returnUrl="@returnUrl">
+		<button class="vote-btn @(Model.UpvotedByMe ? "voted" : "")" type="submit" title="Upvote">▲ @Model.Upvotes</button>
+	</form>
+	<div class="card-body">
+		@if (Model.Tags.Count > 0)
+		{
+			<div class="badges">
+				@foreach (var tag in Model.Tags)
+				{
+					<span class="badge tag-badge">@tag</span>
+				}
+			</div>
+		}
+		<h2 class="card-title"><a href="@Model.Url" target="_blank" rel="noopener noreferrer">@Model.Title</a></h2>
+		<p class="card-desc">@Model.Description</p>
+		<div class="card-meta">
+			<partial name="_TypeIcon" model="Model.Type" />
+			<img class="favicon" src="https://icons.duckduckgo.com/ip3/@(Model.Domain).ico" width="16" height="16" loading="lazy" alt="" title="@Model.Domain" />
+			<span>by @Model.Submitter</span>
+			<span>@Model.Age</span>
+		</div>
+	</div>
+	<div class="card-actions">
+		@if (mode == "read")
+		{
+			<form class="action-form unread" method="post" asp-page-handler="UnmarkRead" asp-route-linkId="@Model.Id" asp-route-returnUrl="@returnUrl">
+				<button class="icon-action" type="submit" title="Mark as unread" aria-label="Mark as unread">↺</button>
+			</form>
+		}
+		else
+		{
+			<form class="action-form read" method="post" asp-page-handler="MarkRead" asp-route-linkId="@Model.Id" asp-route-returnUrl="@returnUrl">
+				<button class="icon-action" type="submit" title="Mark as read" aria-label="Mark as read">✓</button>
+			</form>
+			<form class="action-form archive" method="post" asp-page-handler="Archive" asp-route-linkId="@Model.Id" asp-route-returnUrl="@returnUrl">
+				<button class="icon-action @(Model.ArchivedByMe ? "saved" : "")" type="submit" title="@(Model.ArchivedByMe ? "Archived" : "Save to archive")" aria-label="Save to archive">
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-4 7 4V5a2 2 0 0 0-2-2z"/></svg>
+				</button>
+			</form>
+		}
+	</div>
+</article>

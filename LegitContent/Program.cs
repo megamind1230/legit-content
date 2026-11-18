@@ -28,6 +28,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<LinkService>();
+builder.Services.AddScoped<UserLinkStateService>();
 builder.Services.AddScoped<UserService>();
 builder.Services
 	.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

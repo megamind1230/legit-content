@@ -1,5 +1,9 @@
 ﻿const dialog = document.getElementById("add-dialog");
 document.getElementById("add-button")?.addEventListener("click", () => dialog?.showModal());
+
+const navDialog = document.getElementById("nav-dialog");
+document.getElementById("nav-button")?.addEventListener("click", () => navDialog?.showModal());
+
 document.querySelectorAll("[data-close]").forEach((button) =>
 	button.addEventListener("click", () => button.closest("dialog")?.close())
 );
@@ -26,6 +30,48 @@ document.querySelectorAll(".vote form").forEach((form) => {
 			const button = form.querySelector(".vote-btn");
 			button.classList.toggle("voted", result.voted);
 			button.textContent = `▲ ${result.upvotes}`;
+		} catch {
+			form.submit();
+		}
+	});
+});
+
+async function postAction(form) {
+	const response = await fetch(form.action, {
+		method: "POST",
+		headers: {
+			"X-Requested-With": "fetch",
+			"RequestVerificationToken": csrfToken,
+		},
+		body: new FormData(form),
+	});
+	if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+	return response.json();
+}
+
+document.querySelectorAll(".action-form.read, .action-form.unread, .action-form.delete").forEach((form) => {
+	form.addEventListener("submit", async (event) => {
+		if (!csrfToken) return;
+		event.preventDefault();
+		try {
+			await postAction(form);
+			const target = form.closest(".card, .archive-item");
+			if (!target) return;
+			target.classList.add("removing");
+			setTimeout(() => target.remove(), 150);
+		} catch {
+			form.submit();
+		}
+	});
+});
+
+document.querySelectorAll(".action-form.archive").forEach((form) => {
+	form.addEventListener("submit", async (event) => {
+		if (!csrfToken) return;
+		event.preventDefault();
+		try {
+			await postAction(form);
+			form.querySelector(".icon-action")?.classList.add("saved");
 		} catch {
 			form.submit();
 		}

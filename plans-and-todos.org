@@ -3,6 +3,50 @@
 #+EMAIL: hassan24641@gmail.com
 #+TODO syntax: - [ ] todo | - [-] in-progress | - [X] done
 
+* v1.6 — 2026-11-18 (done)
+
+- [X] Monochrome SVG icons (sprite + <use>) on every sidebar nav item and
+      account button, with labels kept visible
+- [X] About link moved out of the nav into the docked bottom section, just
+      above the user account block (divider above the account controls)
+
+* v1.5 — 2026-11-18 (done)
+
+- [X] Type labels replaced with monochrome icons (document, movie, mic, cap,
+  book, wrench) at the bottom of each card before the domain, tooltip shows
+  the type; topic tag badges stay at the top
+- [X] Feed page hero/title removed for a minimal feed
+- [X] Static /About page (mission, ranking rules, how to use) linked from the
+  sidebar for everyone
+- [X] Burger sidebar docks to the right edge (slides in under the burger)
+
+* v1.4 — 2026-11-18 (done)
+
+- [X] Mark-as-read / archive icons moved to the right edge of each card,
+      stacked vertically; upvote remains on the left
+- [X] All auth controls (user name/email, log out, log in, register) moved
+      from the top bar into the burger sidebar footer
+- [X] Burger icon docked on the right side of the top bar
+- [X] LICENSE template renamed from chrono to legit-content with an accurate
+      description
+
+* v1.3 — 2026-11-18 (done)
+
+- [X] "Mark as read" check on every feed card: per-user =ReadLink= table
+      (unique UserId+LinkId, cascade to Link), read links excluded from the
+      feed, in-place removal via fetch with a no-JS redirect fallback
+- [X] =Already read= page (/AlreadyRead) with full cards and an unmark button
+      that restores the link to the feed
+- [X] Archive: bookmark button on feed cards storing a title+URL snapshot in
+      =ArchivedLink= (unique UserId+Url, no Link FK), so entries survive feed
+      expiry and link deletion; /Archive page lists them with delete
+- [X] Shared =_LinkCard= partial and =LinkCardMapper= projection reused by the
+      feed and the Already-read page
+- [X] Burger menu sidebar (<dialog>, always visible): Feed for everyone,
+      Archive + Already read when logged in, Log in pinned at the bottom for
+      guests; active page highlighted
+- [X] =AddUserLinkState= migration, =UserLinkStateService= + tests, docs
+
 * v1.2 — 2026-11-17 (done)
 
 - [X] Minimal UI: filter chip bar removed from the page — everything moved into
